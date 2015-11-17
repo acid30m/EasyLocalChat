@@ -96,7 +96,7 @@ namespace WpfApplication1.DAL
                                                 id_message int IDENTITY(1,1) primary key,
                                                 content nvarchar(333) not null,
                                                 id_user int foreign key references Users(id_user),
-                                                date_send date not null
+                                                date_send DATETIME not null
                                             );
 
 
@@ -141,6 +141,8 @@ namespace WpfApplication1.DAL
             }
             return false;
         }
+
+        
 
         #endregion Connection
 
@@ -261,8 +263,154 @@ namespace WpfApplication1.DAL
             }
         }
 
+        string GetUserNickById(int userId)
+        {
+            string query = string.Format(@"select TOP 1 id_user
+                                            from  Users as u 
+                                            where u.nick_name = N'{0}'"
+                                            , userId);
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionStr))
+                {
+                    connection.Open();
+
+                    SqlCommand command = new SqlCommand(query, connection);
+                    SqlDataReader reader = command.ExecuteReader();
+                    reader.Read();
+                    return reader[0].ToString();
+                }
+
+            }
+            catch (SqlException exception)
+            {
+                throw (exception);
+            }
+        }
+
         #endregion Registration/Login
-    
-    
+
+
+        #region Chat
+
+        public int GetTalkMsgCountByName(string talkName)
+        {
+
+
+            string query = string.Format(@"select COUNT(m.id_message)
+                                            from [Messages] as m
+                                            join MessTalks as mt on mt.id_message = m.id_message
+                                            join Talks as t on t.id_talk = mt.id_talk AND t.name = N'{0}'"
+                                            , talkName);
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionStr))
+                {
+                    connection.Open();
+
+                    SqlCommand command = new SqlCommand(query, connection);
+                    SqlDataReader reader = command.ExecuteReader();
+                    reader.Read();
+                    return int.Parse(reader[0].ToString());
+                }
+
+            }
+            catch (SqlException exception)
+            {
+                throw (exception);
+            }
+
+        }
+
+
+        public List<string> GetAllTalkMsgsByName(string talkName)
+        {
+            List<string> result = new List<string>();
+            string query = string.Format(@"select u.nick_name + N': ' + m.content + N'  *' + CONVERT(VARCHAR(19),m.date_send) + N'*'
+                                            from [Messages] as m
+                                            join Users as u on u.id_user = m.id_user
+                                            join MessTalks as mt on mt.id_message = m.id_message
+                                            join Talks as t on t.id_talk = mt.id_talk AND t.name = N'{0}'
+                                            ORDER BY m.date_send ASC"
+                                            , talkName);
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionStr))
+                {
+                    connection.Open();
+
+                    SqlCommand command = new SqlCommand(query, connection);
+                    SqlDataReader reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        result.Add(reader[0].ToString());
+                    }
+                    
+                }
+
+            }
+            catch (SqlException exception)
+            {
+                throw (exception);
+            }
+            return result;
+        }
+
+
+        int GetTalkIdByName(string talkName)
+        {
+            string query = string.Format(@"select TOP 1 t.id_talk
+                                            from  Talks as t 
+                                            where t.name = N'{0}'"
+                                            , talkName);
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionStr))
+                {
+                    connection.Open();
+
+                    SqlCommand command = new SqlCommand(query, connection);
+                    SqlDataReader reader = command.ExecuteReader();
+                    reader.Read();
+                    return int.Parse(reader[0].ToString());
+                }
+
+            }
+            catch (SqlException exception)
+            {
+                throw (exception);
+            }
+        }
+
+                
+        public void SendMessage(string talkName, int userId, string message)
+        {
+            string query = string.Format(@"INSERT INTO [Messages] values (N'{0}',{1}, GETDATE())
+                                            INSERT INTO MessTalks values (N'{2}', (select TOP 1 m.id_message
+                                                                                    from [Messages] as m
+                                                                                    where m.content = N'{0}' AND m.id_user = {2}
+                                                                                    order by m.date_send DESC) ) "
+                                            , message, userId, GetTalkIdByName(talkName));
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionStr))
+                {
+                    connection.Open();
+
+                    SqlCommand command = new SqlCommand(query, connection);
+                    SqlDataReader reader = command.ExecuteReader();
+                    
+                }
+
+            }
+            catch (SqlException e)
+            {
+                string ex = e.Message;
+                
+            }
+        }
+
+        #endregion Chat
+
     }
 }

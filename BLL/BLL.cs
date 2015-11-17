@@ -85,9 +85,25 @@ namespace WpfApplication1.BLL
 
         #region Chat
 
-        public void Refresh(int userId)
-        {
 
+        public int GetTalkMsgCountByName(string talkName)
+        {
+            return dal.GetTalkMsgCountByName(talkName);
+        }
+
+        
+
+        public List<string> GetAllTalkMsgsByName(string talkName)
+        {
+            return dal.GetAllTalkMsgsByName(talkName);
+        }
+
+        public void SendMessage(string talkName, int userId, string message)
+        {
+            if (talkName == "General")
+            {
+                dal.SendMessage(talkName, userId, message);
+            }
         }
 
         #endregion

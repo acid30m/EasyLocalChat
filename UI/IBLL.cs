@@ -16,8 +16,9 @@ namespace WpfApplication1.UI
         bool CheckUserPass(string nickName, string password);
         void CheckDBTables();
         int GetUserIdByNick(string nickName);
-
-        
+        int GetTalkMsgCountByName(string talkName);
+        List<string> GetAllTalkMsgsByName(string talkName);
+        void SendMessage(string talkName,int userId,string message);
         
     }
 }

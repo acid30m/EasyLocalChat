@@ -47,7 +47,9 @@ namespace WpfApplication1.UI
                     SaveData(RegNickTB.Text, RegPasswordTB.Password);
                 }
                 ChatWin chWin = new ChatWin();
+                chWin.Show();
                 chWin.userId = BL.GetUserIdByNick(RegNickTB.Text);
+                this.Close();
             }
             else
             {
@@ -72,8 +74,9 @@ namespace WpfApplication1.UI
                 }
 
                 ChatWin chWin = new ChatWin();
-
-
+                chWin.Show();
+                chWin.userId = BL.GetUserIdByNick(SignNickTB.Text);
+                this.Close();
                 return;
             }
             else
@@ -112,5 +115,7 @@ namespace WpfApplication1.UI
                 file.WriteLine(password); 
             }
         }
+
+        
     }
 }
