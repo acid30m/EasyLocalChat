@@ -19,6 +19,11 @@ namespace WpfApplication1.UI
         int GetTalkMsgCountByName(string talkName);
         List<string> GetAllTalkMsgsByName(string talkName);
         void SendMessage(string talkName,int userId,string message);
+        List<string> GetUsersOnlineExceptCurrent(int userId);
+        string GetUserNickById(int userId);
+        int CheckIfPersonalChatExists(string userNick1, string userNick2);
+        void CreatePersonalChat(string userNick1, string userNick2);
+        string GetTalkNameById(int talkId);
         
     }
 }

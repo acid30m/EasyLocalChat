@@ -33,13 +33,13 @@ namespace WpfApplication1.UI
         public ChatWin()
         {
             InitializeComponent();
-            AddNewTab("General");
+            AddNewTab("General",false);
             ChatTabCtrl.SelectedIndex = 0;
         }
 
-        private void AddNewTab(string name)
+        private void AddNewTab(string name, bool IsPersonalChat)
         {
-            tabs.Add(name, 0);
+            
             TabItem tb = new TabItem();
             StackPanel head = new StackPanel();
             head.Orientation = Orientation.Horizontal;
@@ -67,7 +67,27 @@ namespace WpfApplication1.UI
 
             Label lb = new Label();
             lb.Visibility = Visibility.Hidden;
-            lb.Content = name;
+            if (!IsPersonalChat)
+            {
+                lb.Content = name;
+                tabs.Add(name, 0);
+            }
+            else
+            {
+                int res = BL.CheckIfPersonalChatExists(name, BL.GetUserNickById(userId));
+                if (res == 0)
+                {
+                    BL.CreatePersonalChat(name, BL.GetUserNickById(userId));
+                    lb.Content = string.Format("pm_{0}:{1}", name, BL.GetUserNickById(userId));
+                }
+                else
+                {
+                    lb.Content = BL.GetTalkNameById(res);
+                }
+                tabs.Add(lb.Content.ToString(), 0);
+
+            }
+            
             content.Children.Add(lb);
 
             TextBox chatInput = new TextBox();
@@ -145,8 +165,40 @@ namespace WpfApplication1.UI
 
         private void Window_Closing_1(object sender, System.ComponentModel.CancelEventArgs e)
         {
-
             Application.Current.Shutdown();
+        }
+
+        private void Expander_Expanded_1(object sender, RoutedEventArgs e)
+        {
+            StackPanel content = new StackPanel();
+            List<string> openedTabs = new List<string>(tabs.Keys);
+            foreach (string name in BL.GetUsersOnlineExceptCurrent(userId))
+            {
+                if (!( openedTabs.Contains(string.Format("pm_{0}:{1}", BL.GetUserNickById(userId), name))  ||
+                     openedTabs.Contains(string.Format("pm_{1}:{0}", BL.GetUserNickById(userId), name))))
+                {
+                    Button btn = new Button();
+                    btn.Content = name;
+                    btn.Click += btnOpen_Click;
+                    content.Children.Add(btn);
+                }
+            }
+            ((Expander)sender).Content = content;
+        }
+
+        private void btnOpen_Click(object sender, RoutedEventArgs e)
+        {
+            AddNewTab(((Button)sender).Content.ToString(),true);
+            StackPanel sp = (StackPanel)(((Button)sender).Parent);
+            int count = 0;
+            for (int i = 0; i < sp.Children.Count; i++)
+            {
+                if (sp.Children[i] == (Button)sender)
+                {
+                    count = i;
+                }
+            }
+            sp.Children.RemoveAt(count);
         }
 
 

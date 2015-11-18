@@ -263,11 +263,11 @@ namespace WpfApplication1.DAL
             }
         }
 
-        string GetUserNickById(int userId)
+        public string GetUserNickById(int userId)
         {
-            string query = string.Format(@"select TOP 1 id_user
+            string query = string.Format(@"select TOP 1 u.nick_name
                                             from  Users as u 
-                                            where u.nick_name = N'{0}'"
+                                            where id_user = N'{0}'"
                                             , userId);
             try
             {
@@ -382,13 +382,38 @@ namespace WpfApplication1.DAL
             }
         }
 
+        public string GetTalkNameById(int talkId)
+        {
+            string query = string.Format(@"select TOP 1 t.name 
+                                            from  Talks as t 
+                                            where t.id_talk = N'{0}'"
+                                           , talkId);
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionStr))
+                {
+                    connection.Open();
+
+                    SqlCommand command = new SqlCommand(query, connection);
+                    SqlDataReader reader = command.ExecuteReader();
+                    reader.Read();
+                    return reader[0].ToString();
+                }
+
+            }
+            catch (SqlException exception)
+            {
+                throw (exception);
+            }
+        }
+
                 
         public void SendMessage(string talkName, int userId, string message)
         {
             string query = string.Format(@"INSERT INTO [Messages] values (N'{0}',{1}, GETDATE())
                                             INSERT INTO MessTalks values (N'{2}', (select TOP 1 m.id_message
                                                                                     from [Messages] as m
-                                                                                    where m.content = N'{0}' AND m.id_user = {2}
+                                                                                    where m.content = N'{0}' AND m.id_user = {1}
                                                                                     order by m.date_send DESC) ) "
                                             , message, userId, GetTalkIdByName(talkName));
             try
@@ -410,6 +435,125 @@ namespace WpfApplication1.DAL
             }
         }
 
+
+        public List<string> GetUsersOnlineExceptCurrent(int userId)
+        {
+            List<string> result = new List<string>();
+
+            string query = string.Format(@"select u.nick_name
+                                            from  Users as u 
+                                            where u.id_user != {0} AND u.status = 1"
+                                            , userId);
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionStr))
+                {
+                    connection.Open();
+
+                    SqlCommand command = new SqlCommand(query, connection);
+                    SqlDataReader reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        result.Add(reader[0].ToString());
+                    }
+
+                }
+
+            }
+            catch (SqlException exception)
+            {
+                throw (exception);
+            }
+
+            return result;
+        }
+
+        public int CheckIfPersonalChatExists(string userNick1, string userNick2)
+        {
+            string query = string.Format(@"if exists ( select id_talk 
+                                                       from Talks 
+                                                       where name = N'pm_{0}:{1}' OR name = N'pm_{1}:{0}' ) 
+                                            BEGIN
+                                                select id_talk as result
+                                                from Talks 
+                                                where name = N'pm_{0}:{1}' OR name = N'pm_{1}:{0}' 
+                                            END
+                                           ELSE
+                                            BEGIN
+                                                select 0 as result
+                                            END"
+                                       , userNick1, userNick2);
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionStr))
+                {
+                    connection.Open();
+
+                    SqlCommand command = new SqlCommand(query, connection);
+                    SqlDataReader reader = command.ExecuteReader();
+                    reader.Read();
+                    return int.Parse(reader["result"].ToString());
+                }
+
+            }
+            catch (SqlException exception)
+            {
+                return 0;
+                throw (exception);                
+            }
+            
+        }
+
+        public void CreatePersonalChat(string userNick1, string userNick2)
+        {
+            string query = string.Format(@"INSERT INTO Talks values (N'pm_{0}:{1}')"
+                                            , userNick1, userNick2
+                                            );
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionStr))
+                {
+                    connection.Open();
+
+                    SqlCommand command = new SqlCommand(query, connection);
+                    SqlDataReader reader = command.ExecuteReader();
+                    AddPersonalTalkUserCon(userNick1, userNick2, GetTalkIdByName(string.Format("pm_{0}:{1}", userNick1, userNick2)));
+                }
+
+            }
+            catch (SqlException e)
+            {
+                string ex = e.Message;
+
+            }
+        }
+
+
+        private void AddPersonalTalkUserCon(string userNick1, string userNick2, int talkId)
+        {
+            string query = string.Format(@" INSERT INTO UserTalks values ({0}, {1}, 1 )
+                                            INSERT INTO UserTalks values ({0}, {2}, 1 )"
+                                            , GetTalkIdByName(string.Format("pm_{0}:{1}", userNick1, userNick2))
+                                            , GetUserIdByNick(userNick1)
+                                            , GetUserIdByNick(userNick2));
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionStr))
+                {
+                    connection.Open();
+
+                    SqlCommand command = new SqlCommand(query, connection);
+                    SqlDataReader reader = command.ExecuteReader();
+
+                }
+
+            }
+            catch (SqlException e)
+            {
+                string ex = e.Message;
+
+            }
+        }
         #endregion Chat
 
     }

@@ -100,10 +100,34 @@ namespace WpfApplication1.BLL
 
         public void SendMessage(string talkName, int userId, string message)
         {
-            if (talkName == "General")
-            {
-                dal.SendMessage(talkName, userId, message);
-            }
+            dal.SendMessage(talkName, userId, message);
+            
+            
+        }
+
+        public List<string> GetUsersOnlineExceptCurrent(int userId)
+        {
+            return dal.GetUsersOnlineExceptCurrent(userId);
+        }
+
+        public string GetUserNickById(int userId)
+        {
+            return dal.GetUserNickById(userId);
+        }
+
+        public int CheckIfPersonalChatExists(string userNick1, string userNick2)
+        {
+            return dal.CheckIfPersonalChatExists(userNick1, userNick2);
+        }
+
+        public  void CreatePersonalChat(string userNick1, string userNick2)
+        {
+            dal.CreatePersonalChat(userNick1, userNick2);
+        }
+
+        public string GetTalkNameById(int talkId)
+        {
+            return dal.GetTalkNameById(talkId);
         }
 
         #endregion
