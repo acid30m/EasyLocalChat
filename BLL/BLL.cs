@@ -81,6 +81,11 @@ namespace WpfApplication1.BLL
             return dal.GetUserIdByNick(nickName);
         }
 
+        public void ChangeUserStatus(int userId, int status)
+        {
+            dal.ChangeUserStatus(userId, status);
+        }
+
         #endregion Registration/Login
 
         #region Chat
@@ -129,6 +134,38 @@ namespace WpfApplication1.BLL
         {
             return dal.GetTalkNameById(talkId);
         }
+
+        public List<string> GetAllGroupTalksName()
+        {
+            return dal.GetAllGroupTalksName();
+        }
+
+        public int CheckIfGroupChatExists(string name)
+        {
+            return dal.CheckIfGroupChatExists(name);
+        }
+
+        public void CreateGroupChat(string name, int userId)
+        {
+            dal.CreateGroupChat(name, userId);
+        }
+
+        public void CreateConTalk(int userId, int talkId)
+        {
+            dal.CreateConTalk(userId, talkId);
+        }
+
+        public int GetTalkIdByName(string talkName)
+        {
+            return dal.GetTalkIdByName(talkName);
+        }
+
+        public void GrantAccessToTalk(int userId, int talkId)
+        {
+           dal.GrantAccessToTalk(userId,talkId);
+        }
+
+
 
         #endregion
 

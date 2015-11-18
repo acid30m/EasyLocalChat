@@ -288,6 +288,31 @@ namespace WpfApplication1.DAL
             }
         }
 
+        public void ChangeUserStatus(int userId, int status)
+        {
+            string query = string.Format(@"UPDATE Users
+                                           set status = {1}
+                                            where id_user = {0}"
+                                            , userId, status);
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionStr))
+                {
+                    connection.Open();
+
+                    SqlCommand command = new SqlCommand(query, connection);
+                    SqlDataReader reader = command.ExecuteReader();
+
+                }
+
+            }
+            catch (SqlException e)
+            {
+                string ex = e.Message;
+
+            }
+        }
+
         #endregion Registration/Login
 
 
@@ -357,7 +382,7 @@ namespace WpfApplication1.DAL
         }
 
 
-        int GetTalkIdByName(string talkName)
+        public int GetTalkIdByName(string talkName)
         {
             string query = string.Format(@"select TOP 1 t.id_talk
                                             from  Talks as t 
@@ -554,6 +579,190 @@ namespace WpfApplication1.DAL
 
             }
         }
+
+        public List<string> GetAllGroupTalksName()
+        {
+            List<string> result = new List<string>();
+
+            string query = @"select t.name
+                            from  Talks as t 
+                            where t.name NOT Like 'pm_%'";
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionStr))
+                {
+                    connection.Open();
+
+                    SqlCommand command = new SqlCommand(query, connection);
+                    SqlDataReader reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        result.Add(reader[0].ToString());
+                    }
+
+                }
+
+            }
+            catch (SqlException exception)
+            {
+                throw (exception);
+            }
+
+            return result;
+        }
+
+        public int CheckIfGroupChatExists(string name)
+        {
+            string query = string.Format(@"if exists ( select id_talk 
+                                                       from Talks 
+                                                       where name = N'{0}' ) 
+                                            BEGIN
+                                                select id_talk as result
+                                                from Talks 
+                                                where name = N'{0}'  
+                                            END
+                                           ELSE
+                                            BEGIN
+                                                select 0 as result
+                                            END"
+                                       , name);
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionStr))
+                {
+                    connection.Open();
+
+                    SqlCommand command = new SqlCommand(query, connection);
+                    SqlDataReader reader = command.ExecuteReader();
+                    reader.Read();
+                    return int.Parse(reader["result"].ToString());
+                }
+
+            }
+            catch (SqlException exception)
+            {
+                return 0;
+                throw (exception);
+            }
+        }
+
+
+        public void CreateGroupChat(string name, int userId)
+        {
+            string query = string.Format(@"INSERT INTO Talks values (N'{0}')"
+                                            , name
+                                            );
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionStr))
+                {
+                    connection.Open();
+
+                    SqlCommand command = new SqlCommand(query, connection);
+                    SqlDataReader reader = command.ExecuteReader();
+                    GrantAccessToTalk(userId, GetTalkIdByName(name));
+                }
+
+            }
+            catch (SqlException e)
+            {
+                string ex = e.Message;
+
+            }
+        }
+
+
+        public void GrantAccessToTalk(int userId, int talkId)
+        {
+            string query = string.Format(@"if exists ( select status 
+                                                       from UserTalks 
+                                                       where id_talk = {0} AND id_user = {1} ) 
+                                            BEGIN
+                                                select 1 as result                                                 
+                                            END
+                                           ELSE
+                                            BEGIN
+                                                select 0 as result
+                                            END"
+                                            , userId, talkId
+                                            );
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionStr))
+                {
+                    connection.Open();
+
+                    SqlCommand command = new SqlCommand(query, connection);
+                    SqlDataReader reader = command.ExecuteReader();
+                    reader.Read();
+                    if (int.Parse(reader[0].ToString()) == 1)
+                    {
+                        UpdateConTalkStatus(userId, talkId);
+                    }
+                    else
+                    {
+                        CreateConTalk(userId, talkId);
+                    }
+                    
+                }
+
+            }
+            catch (SqlException e)
+            {
+                string ex = e.Message;
+            }
+        }
+
+        public void CreateConTalk(int userId, int talkId)
+        {
+            string query = string.Format(@"INSERT INTO UserTalks values ({1},{0},1)"
+                                            , userId, talkId
+                                            );
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionStr))
+                {
+                    connection.Open();
+
+                    SqlCommand command = new SqlCommand(query, connection);
+                    SqlDataReader reader = command.ExecuteReader();
+                    
+                }
+
+            }
+            catch (SqlException e)
+            {
+                string ex = e.Message;
+
+            }
+        }
+
+        private void UpdateConTalkStatus(int userId, int talkId)
+        {
+            string query = string.Format(@"UPDATE UserTalks 
+                                            set status = 1
+                                            where id_talk = {1} AND id_user = {0}"
+                                            , userId, talkId
+                                            );
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionStr))
+                {
+                    connection.Open();
+
+                    SqlCommand command = new SqlCommand(query, connection);
+                    SqlDataReader reader = command.ExecuteReader();
+
+                }
+
+            }
+            catch (SqlException e)
+            {
+                string ex = e.Message;
+            }
+        }
+
+
         #endregion Chat
 
     }

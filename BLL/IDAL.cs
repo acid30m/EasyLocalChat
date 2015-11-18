@@ -40,6 +40,18 @@ namespace WpfApplication1.BLL
 
         string GetTalkNameById(int talkId);
 
+        int GetTalkIdByName(string talkName);
+
+        List<string> GetAllGroupTalksName();
+
+        int CheckIfGroupChatExists(string name);
+
+        void CreateGroupChat(string name, int userId);
+
+        void ChangeUserStatus(int userId, int status);
+
+        void CreateConTalk(int userId, int talkId);
+
 
     }
 }

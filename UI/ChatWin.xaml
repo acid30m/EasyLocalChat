@@ -8,7 +8,7 @@
 
 
             </Expander>
-            <Expander Header="Rooms" IsExpanded="False">
+            <Expander Header="Rooms" IsExpanded="False" Expanded="Expander_Expanded_2">
 
 
             </Expander>

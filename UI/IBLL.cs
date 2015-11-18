@@ -24,6 +24,14 @@ namespace WpfApplication1.UI
         int CheckIfPersonalChatExists(string userNick1, string userNick2);
         void CreatePersonalChat(string userNick1, string userNick2);
         string GetTalkNameById(int talkId);
+        int GetTalkIdByName(string talkName);
+        List<string> GetAllGroupTalksName();
+        int CheckIfGroupChatExists(string name);
+        void CreateGroupChat(string name, int userId);
+        void ChangeUserStatus(int userId, int status);
+        void CreateConTalk(int userId, int talkId);
+        void GrantAccessToTalk(int userId, int talkId);
+
         
     }
 }

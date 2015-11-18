@@ -34,6 +34,7 @@ namespace WpfApplication1.UI
         {
             InitializeComponent();
             AddNewTab("General",false);
+            BL.GrantAccessToTalk(userId, BL.GetTalkIdByName("General"));
             ChatTabCtrl.SelectedIndex = 0;
         }
 
@@ -124,15 +125,12 @@ namespace WpfApplication1.UI
             {
                 if (((TabControl)(ti.Parent)).Items[i] == ti)
                 {
-                    StackPanel sp = (StackPanel)ti.Header;
-                    TextBlock tb = (TextBlock)sp.Children[0];
-                    tabs.Remove(tb.Text);
                     cntr = i;
                 }
 
             }
-            TextBlock name = (TextBlock)((StackPanel)(ti.Header)).Children[0];
-            tabs.Remove(name.Text);
+            string name = ((Label)(((StackPanel)(((TabItem)((StackPanel)((Button)sender).Parent).Parent).Content)).Children[1])).Content.ToString(); 
+            tabs.Remove(name);
             ((TabControl)(ti.Parent)).Items.RemoveAt(cntr);
         }
 
@@ -199,6 +197,76 @@ namespace WpfApplication1.UI
                 }
             }
             sp.Children.RemoveAt(count);
+        }
+
+        private void Expander_Expanded_2(object sender, RoutedEventArgs e)
+        {
+            StackPanel content = new StackPanel();
+            List<string> openedTabs = new List<string>(tabs.Keys);
+            foreach (string name in BL.GetAllGroupTalksName())
+            {
+                if (!(openedTabs.Contains(name)))
+                {
+                    Button btn = new Button();
+                    btn.Content = name;
+                    btn.Click += btnOpenGroup_Click;
+                    content.Children.Add(btn);
+                }
+            }
+            StackPanel spNewRoom = new StackPanel();
+            spNewRoom.Orientation = Orientation.Horizontal;
+
+            TextBox newRoomTb = new TextBox();
+            newRoomTb.ToolTip = "Name of room to create/join";
+            newRoomTb.Width = 70;
+
+            Button btnCreate = new Button();
+            btnCreate.Content = "Ok";
+            btnCreate.Width = 30;
+            btnCreate.Click += btnNewGroup_Click;
+
+            spNewRoom.Children.Add(newRoomTb);
+            spNewRoom.Children.Add(btnCreate);
+
+            content.Children.Add(spNewRoom);
+
+            ((Expander)sender).Content = content;
+        }
+
+        private void btnOpenGroup_Click(object sender, RoutedEventArgs e)
+        {
+            AddNewTab(((Button)sender).Content.ToString(), false);
+            StackPanel sp = (StackPanel)(((Button)sender).Parent);
+            int count = 0;
+            for (int i = 0; i < sp.Children.Count; i++)
+            {
+                if (sp.Children[i] == (Button)sender)
+                {
+                    count = i;
+                }
+            }
+            sp.Children.RemoveAt(count);
+        }
+
+        private void btnNewGroup_Click(object sender, RoutedEventArgs e)
+        {
+            StackPanel sp = (StackPanel)(((Button)sender).Parent);
+            string name = ((TextBox)(sp.Children[0])).Text;
+            if(BL.CheckIfGroupChatExists(name) == 0)
+            {
+                BL.CreateGroupChat(name,userId);
+                AddNewTab(name, false);
+            }
+            else
+            {
+                MessageBoxResult result = MessageBox.Show(string.Format("Do you want to join {0} room?",name), "Confirmation", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                if (result == MessageBoxResult.Yes)
+                {
+                    BL.CreateConTalk(userId,BL.GetTalkIdByName(name));
+                    MessageBox.Show(string.Format("When you will be allowed to {0} room, you will see it in your room list!", name), "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }           
+                        
         }
 
 
