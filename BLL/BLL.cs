@@ -165,6 +165,11 @@ namespace WpfApplication1.BLL
            dal.GrantAccessToTalk(userId,talkId);
         }
 
+        public bool CheckTalkForNewMsgs(string talkName)
+        {
+            return dal.CheckTalkForNewMsgs(talkName);
+        }
+
 
 
         #endregion

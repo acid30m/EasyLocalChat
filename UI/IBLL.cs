@@ -31,7 +31,7 @@ namespace WpfApplication1.UI
         void ChangeUserStatus(int userId, int status);
         void CreateConTalk(int userId, int talkId);
         void GrantAccessToTalk(int userId, int talkId);
-
+        bool CheckTalkForNewMsgs(string talkName);
         
     }
 }

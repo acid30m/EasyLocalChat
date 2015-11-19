@@ -13,6 +13,11 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Collections;
 using System.Collections.Specialized;
+using System.Diagnostics;
+using System.Windows.Navigation;
+using System.Windows.Threading;
+using System.IO;
+
 
 
 namespace WpfApplication1.UI
@@ -24,26 +29,67 @@ namespace WpfApplication1.UI
     {
 
         public int userId;
+               
 
-        private Dictionary<string, int> tabs =
-        new Dictionary<string, int>();
+        private List<TabItem> tabList = new List<TabItem>();
+
+        private List<int> tabMsgCount = new List<int>();
+
+        private System.Windows.Threading.DispatcherTimer timer;
+
+        public Brush foreground;
+        public Brush background;
 
         private BLL.BLL BL = new BLL.BLL();
 
         public ChatWin()
         {
             InitializeComponent();
+
+            List<string> style = new List<string>();
+            try
+            {
+                using (StreamReader sr = new StreamReader("StyleConfig.txt"))
+                {
+                    String line;
+                    while ((line = sr.ReadLine()) != null)
+                        style.Add(line);
+                }
+            }
+            catch (Exception e)
+            {
+                return;
+            };
+            if (style.Count == 2)
+            {
+                background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(style[0]));
+                foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(style[1]));
+                SetStyles();
+            }
+            
+
+            timer = new System.Windows.Threading.DispatcherTimer();
+            timer.Tick += dispatcherTimer_Tick;
+            timer.Interval = new TimeSpan(0, 0, 1);
+            timer.Start();
+
             AddNewTab("General",false);
             BL.GrantAccessToTalk(userId, BL.GetTalkIdByName("General"));
             ChatTabCtrl.SelectedIndex = 0;
+        }
+
+        private void dispatcherTimer_Tick(object sender, EventArgs e)
+        {
+            Refresh();
         }
 
         private void AddNewTab(string name, bool IsPersonalChat)
         {
             
             TabItem tb = new TabItem();
-            StackPanel head = new StackPanel();
-            head.Orientation = Orientation.Horizontal;
+            DockPanel head = new DockPanel();
+            head.HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch; 
+            head.VerticalAlignment = System.Windows.VerticalAlignment.Stretch; 
             head.Children.Add(new TextBlock( new Run(name)));
 
             Button btnClose = new Button();
@@ -70,8 +116,7 @@ namespace WpfApplication1.UI
             lb.Visibility = Visibility.Hidden;
             if (!IsPersonalChat)
             {
-                lb.Content = name;
-                tabs.Add(name, 0);
+                lb.Content = name;                
             }
             else
             {
@@ -85,7 +130,7 @@ namespace WpfApplication1.UI
                 {
                     lb.Content = BL.GetTalkNameById(res);
                 }
-                tabs.Add(lb.Content.ToString(), 0);
+                
 
             }
             
@@ -98,19 +143,14 @@ namespace WpfApplication1.UI
             
 
             content.Children.Add(chatInput);
-
-            Button btnRefreh = new Button();
-            btnRefreh.Width = 50;
-            btnRefreh.Height = 30;
-            btnRefreh.Content = "Refresh";
-            btnRefreh.Click += btnRefresh_Click;
-
-            content.Children.Add(btnRefreh);
-
+            
             tb.Content = content;
             tb.Header = head;
-            ChatTabCtrl.Items.Add(tb);
 
+            tabMsgCount.Add(0);
+            tabList.Add(tb); 
+
+            ChatTabCtrl.Items.Add(tb);
             
         }  
 
@@ -118,44 +158,44 @@ namespace WpfApplication1.UI
 
         private void btnClose_Click(object sender, RoutedEventArgs e)
         {
-            
-            TabItem ti = (TabItem)((StackPanel)((Button)sender).Parent).Parent;
-            int cntr = 0;
-            for (int i = 0; i < ((TabControl)(ti.Parent)).Items.Count; i++)
-            {
-                if (((TabControl)(ti.Parent)).Items[i] == ti)
-                {
-                    cntr = i;
-                }
-
-            }
-            string name = ((Label)(((StackPanel)(((TabItem)((StackPanel)((Button)sender).Parent).Parent).Content)).Children[1])).Content.ToString(); 
-            tabs.Remove(name);
-            ((TabControl)(ti.Parent)).Items.RemoveAt(cntr);
+            int idx = ChatTabCtrl.SelectedIndex;
+            ChatTabCtrl.Items.RemoveAt(idx);
+            tabList.RemoveAt(idx);
+            tabMsgCount.RemoveAt(idx);
         }
 
-        private void btnRefresh_Click(object sender, RoutedEventArgs e)
+        private void Refresh()
         {
-            string name = ((Label)((StackPanel)((Button)sender).Parent).Children[1]).Content.ToString();
-
-            //Don't touch - Magic!!!
-            if (tabs[name] != BL.GetTalkMsgCountByName(name))
+            if (ChatTabCtrl.Items.Count == 0 || ChatTabCtrl.SelectedItem == null)
             {
-                ((TextBlock)((ScrollViewer)((StackPanel)((Button)sender).Parent).Children[0]).Content).Text = "";
-                foreach (string message in BL.GetAllTalkMsgsByName(name))
-                {
-                    
-                    ((TextBlock)((ScrollViewer)((StackPanel)((Button)sender).Parent).Children[0]).Content).Text += string.Format("\n{0}", message);                    
-                }
+                return;
             }
-            tabs[name] = BL.GetTalkMsgCountByName(name);            
+            
+                int idx = ChatTabCtrl.SelectedIndex;
+                TabItem ti = tabList[idx];
+                string talkName = ((Label)(((StackPanel)ti.Content).Children[1])).Content.ToString();
+            if (BL.CheckTalkForNewMsgs(talkName))
+            {
+                if (tabMsgCount[idx] != BL.GetTalkMsgCountByName(talkName))
+                {                
+                    ((TextBlock)((ScrollViewer)((StackPanel)(ti.Content)).Children[0]).Content).Text = "";
+                    foreach (string message in BL.GetAllTalkMsgsByName(talkName))
+                    {
+
+                        ((TextBlock)((ScrollViewer)((StackPanel)(ti.Content)).Children[0]).Content).Text += string.Format("\n{0}", message);                    
+                    }
+                    ((ScrollViewer)((StackPanel)(ti.Content)).Children[0]).ScrollToBottom();
+                }
+                tabMsgCount[idx] = BL.GetTalkMsgCountByName(talkName);   
+            }
         }
 
         private void inputChatTB_KeyUp(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Return)
             {
-                string talkName = ((Label)((StackPanel)((TextBox)sender).Parent).Children[1]).Content.ToString();
+                int idx = ChatTabCtrl.SelectedIndex;
+                string talkName = ((Label)(((StackPanel)tabList[idx].Content).Children[1])).Content.ToString();
                 BL.SendMessage(talkName,userId,((TextBox)sender).Text);
                 ((TextBox)sender).Text = "";
             }
@@ -169,7 +209,13 @@ namespace WpfApplication1.UI
         private void Expander_Expanded_1(object sender, RoutedEventArgs e)
         {
             StackPanel content = new StackPanel();
-            List<string> openedTabs = new List<string>(tabs.Keys);
+
+            List<string> openedTabs = new List<string>();
+            foreach(TabItem ti in tabList)
+            {
+                openedTabs.Add(((Label)(((StackPanel)ti.Content).Children[1])).Content.ToString());
+            }
+
             foreach (string name in BL.GetUsersOnlineExceptCurrent(userId))
             {
                 if (!( openedTabs.Contains(string.Format("pm_{0}:{1}", BL.GetUserNickById(userId), name))  ||
@@ -202,7 +248,11 @@ namespace WpfApplication1.UI
         private void Expander_Expanded_2(object sender, RoutedEventArgs e)
         {
             StackPanel content = new StackPanel();
-            List<string> openedTabs = new List<string>(tabs.Keys);
+            List<string> openedTabs = new List<string>();
+            foreach (TabItem ti in tabList)
+            {
+                openedTabs.Add(((Label)(((StackPanel)ti.Content).Children[1])).Content.ToString());
+            }
             foreach (string name in BL.GetAllGroupTalksName())
             {
                 if (!(openedTabs.Contains(name)))
@@ -270,7 +320,87 @@ namespace WpfApplication1.UI
         }
 
 
+        private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
+        {
+            Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri));
+            e.Handled = true;
+        }
 
+        private void Button_Click_1(object sender, RoutedEventArgs e)
+        {
+            SettingsWin sw = new SettingsWin();
+            sw.Show();
+            sw.parent = this;
+                       
+        }
+
+        public void SetStyles()
+        {
+            if (background == null || foreground == null)
+            {
+                return;
+            }
+            Resources.Remove(typeof(Button));
+            Resources.Remove(typeof(Expander));
+            Resources.Remove(typeof(TabControl));
+            Resources.Remove(typeof(StackPanel));
+            Resources.Remove(typeof(Grid));
+            Resources.Remove(typeof(DockPanel));
+            
+            
+
+            Style style = new Style
+            {
+                TargetType = typeof(Button)
+            };
+            style.Setters.Add(new Setter(Button.BackgroundProperty, background));
+            style.Setters.Add(new Setter(Button.ForegroundProperty, foreground));
+            Resources.Add(typeof(Button), style);
+            style = new Style
+            {
+                TargetType = typeof(Expander)
+            };
+            style.Setters.Add(new Setter(Expander.BackgroundProperty, background));
+            style.Setters.Add(new Setter(Expander.ForegroundProperty, foreground));
+            Resources.Add(typeof(Expander), style);
+            style = new Style
+            {
+                TargetType = typeof(TabControl)
+            };
+            style.Setters.Add(new Setter(TabControl.BackgroundProperty, background));
+            style.Setters.Add(new Setter(TabControl.ForegroundProperty, foreground));
+            Resources.Add(typeof(TabControl), style);
+            style = new Style
+            {
+                TargetType = typeof(StackPanel)
+            };
+            style.Setters.Add(new Setter(StackPanel.BackgroundProperty, background));
+            Resources.Add(typeof(StackPanel), style);
+            style = new Style
+            {
+                TargetType = typeof(Grid)
+            };
+            style.Setters.Add(new Setter(Grid.BackgroundProperty, background));
+            Resources.Add(typeof(Grid), style);
+            style = new Style
+            {
+                TargetType = typeof(DockPanel)
+            };
+            style.Setters.Add(new Setter(DockPanel.BackgroundProperty, background));
+            Resources.Add(typeof(DockPanel), style); 
+            
+            
+
+            using (System.IO.StreamWriter file =
+                    new System.IO.StreamWriter(@"StyleConfig.txt"))
+            {
+                SolidColorBrush S = background as SolidColorBrush;
+                file.WriteLine(S.Color.ToString());
+                S = foreground as SolidColorBrush;
+                file.WriteLine(S.Color.ToString());
+            }
+
+        }
 
        
     }

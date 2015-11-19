@@ -72,6 +72,9 @@
     <Compile Include="UI\LoginWin.xaml.cs">
       <DependentUpon>LoginWin.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UI\SettingsWin.xaml.cs">
+      <DependentUpon>SettingsWin.xaml</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">
@@ -113,6 +116,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="UI\SettingsWin.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Resource Include="UI\Images\ConnectionBackground.jpg" />
@@ -122,6 +129,18 @@
     <Resource Include="UI\Images\MainIconRedTheme.png" />
     <Resource Include="UI\Images\MainIconStandartTheme.png" />
     <Resource Include="UI\Images\SignupBackground.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="UI\Images\settingsIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="UI\Images\logOutIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="UI\Images\infoIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="UI\Images\gitIcon.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

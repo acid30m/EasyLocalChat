@@ -85,7 +85,8 @@ namespace WpfApplication1.DAL
                                             create table Talks 
                                             (
                                                 id_talk int IDENTITY(1,1) primary key,
-                                                name nvarchar(33) not null
+                                                name nvarchar(33) not null,	
+                                                new_messages int not null
                                             );
 
 
@@ -112,14 +113,13 @@ namespace WpfApplication1.DAL
 
 
                                             create table MessTalks 
-                                            (
-    
+                                            (    
                                                 id_talk int foreign key references Talks(id_talk),
-                                                id_message int foreign key references [Messages](id_message)	
+                                                id_message int foreign key references [Messages](id_message)
                                             );
+                                          
 
-
-                                            INSERT into Talks values(N'General');")
+                                            INSERT into Talks values(N'General',0);")
                 ;
 
             try
@@ -132,6 +132,7 @@ namespace WpfApplication1.DAL
                     SqlDataReader reader = command.ExecuteReader();
                     
                 }
+                CreateMsgTrigger();
                 return true;
 
             }
@@ -140,6 +141,37 @@ namespace WpfApplication1.DAL
                 throw (exception);
             }
             return false;
+        }
+
+
+        private void CreateMsgTrigger()
+        {
+            string query = string.Format(@"CREATE TRIGGER newMsgs  ON MessTalks FOR INSERT AS	
+                                            BEGIN	
+	                                            update Talks
+	                                            set new_messages = 1
+	                                            where id_talk = (select TOP 1 id_talk from inserted)
+                                            END")
+                ;
+
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionStr))
+                {
+                    connection.Open();
+
+                    SqlCommand command = new SqlCommand(query, connection);
+                    SqlDataReader reader = command.ExecuteReader();
+                    
+                }
+                
+
+            }
+            catch (SqlException exception)
+            {
+                throw (exception);
+            }
+            
         }
 
         
@@ -531,7 +563,7 @@ namespace WpfApplication1.DAL
 
         public void CreatePersonalChat(string userNick1, string userNick2)
         {
-            string query = string.Format(@"INSERT INTO Talks values (N'pm_{0}:{1}')"
+            string query = string.Format(@"INSERT INTO Talks values (N'pm_{0}:{1}',0)"
                                             , userNick1, userNick2
                                             );
             try
@@ -649,7 +681,7 @@ namespace WpfApplication1.DAL
 
         public void CreateGroupChat(string name, int userId)
         {
-            string query = string.Format(@"INSERT INTO Talks values (N'{0}')"
+            string query = string.Format(@"INSERT INTO Talks values (N'{0}',0)"
                                             , name
                                             );
             try
@@ -760,6 +792,49 @@ namespace WpfApplication1.DAL
             {
                 string ex = e.Message;
             }
+        }
+
+
+        public bool CheckTalkForNewMsgs(string talkName)
+        {
+            string query = string.Format(@"if exists (SELECT new_messages 
+                                                      FROM Talks 
+                                                      WHERE name = N'{0}' and new_messages = 1 ) 
+                                            BEGIN
+                                                select 1 as result                                                 
+                                            END
+                                           ELSE
+                                            BEGIN
+                                                select 0 as result
+                                            END"
+                                            , talkName
+                                            );
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionStr))
+                {
+                    connection.Open();
+
+                    SqlCommand command = new SqlCommand(query, connection);
+                    SqlDataReader reader = command.ExecuteReader();
+                    reader.Read();
+                    if (int.Parse((reader[0].ToString())) == 1)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+
+            }
+            catch (SqlException e)
+            {
+                string ex = e.Message;
+
+            }
+            return false;
         }
 
 

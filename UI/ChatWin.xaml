@@ -1,9 +1,10 @@
 ﻿<Window x:Class="WpfApplication1.UI.ChatWin"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="ChatWin" Height="396.376" Width="550.951" Closing="Window_Closing_1" ResizeMode="NoResize">
+        Title="Easy Local Chat" Height="396.376" Width="550.951" Closing="Window_Closing_1"
+        Icon="Images\MainIconStandartTheme.png" ResizeMode="NoResize" WindowStyle="ToolWindow">
     <Grid>
-        <StackPanel HorizontalAlignment="Left" Height="297" VerticalAlignment="Top" Width="104">
+        <StackPanel  HorizontalAlignment="Left" Height="373" VerticalAlignment="Top" Width="104">
             <Expander Header="Users" IsExpanded="False" Expanded="Expander_Expanded_1">
 
 
@@ -12,7 +13,7 @@
 
 
             </Expander>
-            <Expander Header="Settings" IsExpanded="False">
+            <Expander Name="asda1" Header="Settings" IsExpanded="False">
                 <Grid Margin="10" HorizontalAlignment="Left" Height="80" Width="80">
                     <Grid.RowDefinitions>
                         <RowDefinition></RowDefinition>
@@ -22,14 +23,30 @@
                         <ColumnDefinition></ColumnDefinition>
                         <ColumnDefinition></ColumnDefinition>
                     </Grid.ColumnDefinitions>
+                    <Button Grid.Row="0" Grid.Column="0" Click="Button_Click_1" >
+                        <Image Source="Images\settingsIcon.png"></Image>
+                    </Button>
+                    <Button Grid.Row="0" Grid.Column="1" >
+                        <Image Source="Images\infoIcon.png"></Image>
+                    </Button>
+                    <Button Grid.Row="1" Grid.Column="1" >
+                        <Image Source="Images\logOutIcon.png"></Image>
+                    </Button>
+                    <Button Grid.Row="1" Grid.Column="0" >
+                        <Hyperlink NavigateUri="https://github.com/acid30m/EasyLocalChat" RequestNavigate="Hyperlink_RequestNavigate">
+                            <Image Source="Images\gitIcon.png"></Image>
+                        </Hyperlink>
+                        
+                    </Button>
+                    
                 </Grid>
 
             </Expander>
 
         </StackPanel>
-        <TabControl Name="ChatTabCtrl" HorizontalAlignment="Left" Height="344" VerticalAlignment="Top" Width="429" Margin="104,10,0,0">
+        <TabControl Name="ChatTabCtrl" HorizontalAlignment="Left" Height="363" VerticalAlignment="Top" Width="441" Margin="104,10,0,0">
             
         </TabControl>
 
-    </Grid>
+    </Grid>    
 </Window>

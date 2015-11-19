@@ -52,6 +52,7 @@ namespace WpfApplication1.BLL
 
         void CreateConTalk(int userId, int talkId);
 
+        bool CheckTalkForNewMsgs(string talkName);
 
     }
 }
