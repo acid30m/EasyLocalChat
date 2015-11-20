@@ -56,6 +56,42 @@ namespace WpfApplication1.DAL
                     reader.Read();
                     if (reader["result"].ToString() == "exist")
                     {
+                        if (!CheckIfTriggersExists())
+                        {
+                            CreateMsgTrigger();
+                            CreateInvitationTrigger();
+                        }
+                        return true;
+                    }
+                    
+                }
+                
+            }
+            catch (SqlException exception)
+            {
+                throw (exception);
+            }
+            return false;
+        }
+
+        public bool CheckIfTriggersExists()
+        {
+            string query = string.Format(@"IF OBJECT_ID('newMsgs', 'TR')  IS NOT NULL select N'exist' as result 
+                                            ELSE
+                                                select N'not exist' as result ")
+                ;
+
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionStr))
+                {
+                    connection.Open();
+
+                    SqlCommand command = new SqlCommand(query, connection);
+                    SqlDataReader reader = command.ExecuteReader();
+                    reader.Read();
+                    if (reader["result"].ToString() == "exist")
+                    {
                         return true;
                     }
                 }
@@ -86,7 +122,8 @@ namespace WpfApplication1.DAL
                                             (
                                                 id_talk int IDENTITY(1,1) primary key,
                                                 name nvarchar(33) not null,	
-                                                new_messages int not null
+                                                new_messages int not null,
+                                                new_joins int not null
                                             );
 
 
@@ -119,7 +156,8 @@ namespace WpfApplication1.DAL
                                             );
                                           
 
-                                            INSERT into Talks values(N'General',0);")
+                                            INSERT into Talks values(N'General',0,0);
+                                            ")
                 ;
 
             try
@@ -133,6 +171,7 @@ namespace WpfApplication1.DAL
                     
                 }
                 CreateMsgTrigger();
+                CreateInvitationTrigger();
                 return true;
 
             }
@@ -150,7 +189,8 @@ namespace WpfApplication1.DAL
                                             BEGIN	
 	                                            update Talks
 	                                            set new_messages = 1
-	                                            where id_talk = (select TOP 1 id_talk from inserted)
+	                                            where id_talk = (select TOP 1 id_talk 
+                                                                from inserted)
                                             END")
                 ;
 
@@ -172,6 +212,38 @@ namespace WpfApplication1.DAL
                 throw (exception);
             }
             
+        }
+
+        private void CreateInvitationTrigger()
+        {
+            string query = string.Format(@"CREATE TRIGGER newJoins  ON UserTalks FOR INSERT AS	
+                                            BEGIN	
+	                                            update Talks
+	                                            set new_joins = 1
+	                                            where id_talk = (select TOP 1 id_talk 
+                                                                 from inserted
+                                                                 where status = 0)
+                                            END")
+                ;
+
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionStr))
+                {
+                    connection.Open();
+
+                    SqlCommand command = new SqlCommand(query, connection);
+                    SqlDataReader reader = command.ExecuteReader();
+
+                }
+
+
+            }
+            catch (SqlException exception)
+            {
+                throw (exception);
+            }
+
         }
 
         
@@ -563,7 +635,7 @@ namespace WpfApplication1.DAL
 
         public void CreatePersonalChat(string userNick1, string userNick2)
         {
-            string query = string.Format(@"INSERT INTO Talks values (N'pm_{0}:{1}',0)"
+            string query = string.Format(@"INSERT INTO Talks values (N'pm_{0}:{1}',0,0)"
                                             , userNick1, userNick2
                                             );
             try
@@ -681,7 +753,7 @@ namespace WpfApplication1.DAL
 
         public void CreateGroupChat(string name, int userId)
         {
-            string query = string.Format(@"INSERT INTO Talks values (N'{0}',0)"
+            string query = string.Format(@"INSERT INTO Talks values (N'{0}',0,0)"
                                             , name
                                             );
             try
@@ -747,7 +819,7 @@ namespace WpfApplication1.DAL
 
         public void CreateConTalk(int userId, int talkId)
         {
-            string query = string.Format(@"INSERT INTO UserTalks values ({1},{0},1)"
+            string query = string.Format(@"INSERT INTO UserTalks values ({1},{0},0)"
                                             , userId, talkId
                                             );
             try
@@ -836,6 +908,204 @@ namespace WpfApplication1.DAL
             }
             return false;
         }
+
+
+        public bool CheckAccessToTalk(int userId, string TalkName)
+        {
+            if (TalkName == "General")
+            {
+                return true;
+            }
+            string query = string.Format(@"if exists (SELECT id_usertalk 
+                                                      FROM UserTalks 
+                                                      WHERE id_talk = {0} AND id_user = {1}
+                                                      AND status = 1) 
+                                            BEGIN
+                                                select 1 as result                                                 
+                                            END
+                                           ELSE
+                                            BEGIN
+                                                select 0 as result
+                                            END"
+                                            , GetTalkIdByName(TalkName)
+                                            , userId
+                                            );
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionStr))
+                {
+                    connection.Open();
+
+                    SqlCommand command = new SqlCommand(query, connection);
+                    SqlDataReader reader = command.ExecuteReader();
+                    reader.Read();
+                    if (int.Parse((reader[0].ToString())) == 1)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+
+            }
+            catch (SqlException e)
+            {
+                string ex = e.Message;
+
+            }
+            return false;
+        }
+
+        public bool CheckTalkForNewJoins(string talkName)
+        {
+            string query = string.Format(@"SELECT new_joins 
+                                            FROM Talks
+                                            WHERE name = N'{0}'"
+                                            , talkName
+                                            );
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionStr))
+                {
+                    connection.Open();
+
+                    SqlCommand command = new SqlCommand(query, connection);
+                    SqlDataReader reader = command.ExecuteReader();
+                    reader.Read();
+                    if (int.Parse((reader[0].ToString())) == 1)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+
+            }
+            catch (SqlException e)
+            {
+                string ex = e.Message;
+
+            }
+            return false;
+        }
+
+
+        public List<string> GetInvitationRequests(string talkName)
+        {
+            List<string> result = new List<string>();
+
+            string query = string.Format(@"select TOP 5 u.nick_name
+                                            from  UserTalks as ut 
+                                            join Users as u on u.id_user = ut.id_user
+                                            where ut.id_talk = {0} AND ut.status = 0"
+                                            , GetTalkIdByName(talkName)
+                                            );
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionStr))
+                {
+                    connection.Open();
+
+                    SqlCommand command = new SqlCommand(query, connection);
+                    SqlDataReader reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        result.Add(reader[0].ToString());
+                    }
+
+                }
+
+            }
+            catch (SqlException exception)
+            {
+                throw (exception);
+            }
+
+            return result;
+        }
+
+        public void ResetNewMsgsStatus(string talkName)
+        {
+            string query = string.Format(@"UPDATE Talks 
+                                            set new_messages = 0
+                                            where id_talk = {0} "
+                                            , GetTalkIdByName(talkName)
+                                            );
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionStr))
+                {
+                    connection.Open();
+
+                    SqlCommand command = new SqlCommand(query, connection);
+                    SqlDataReader reader = command.ExecuteReader();
+
+                }
+
+            }
+            catch (SqlException e)
+            {
+                string ex = e.Message;
+            }
+        }
+
+        public void ResetNewInvitesStatus(string talkName)
+        {
+            string query = string.Format(@"UPDATE Talks 
+                                            set new_joins = 0
+                                            where id_talk = {0} "
+                                            , GetTalkIdByName(talkName)
+                                            );
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionStr))
+                {
+                    connection.Open();
+
+                    SqlCommand command = new SqlCommand(query, connection);
+                    SqlDataReader reader = command.ExecuteReader();
+
+                }
+
+            }
+            catch (SqlException e)
+            {
+                string ex = e.Message;
+            }
+        }
+
+
+        public void LogOut(int userId)
+        {
+            string query = string.Format(@"UPDATE Users 
+                                            set status = 0
+                                            where id_user = {0} "
+                                            , userId
+                                            );
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionStr))
+                {
+                    connection.Open();
+
+                    SqlCommand command = new SqlCommand(query, connection);
+                    SqlDataReader reader = command.ExecuteReader();
+
+                }
+
+            }
+            catch (SqlException e)
+            {
+                string ex = e.Message;
+            }
+        }
+
+
+        
 
 
         #endregion Chat

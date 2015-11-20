@@ -26,10 +26,10 @@
                     <Button Grid.Row="0" Grid.Column="0" Click="Button_Click_1" >
                         <Image Source="Images\settingsIcon.png"></Image>
                     </Button>
-                    <Button Grid.Row="0" Grid.Column="1" >
+                    <Button Grid.Row="0" Grid.Column="1" Click="Button_Click_3" >
                         <Image Source="Images\infoIcon.png"></Image>
                     </Button>
-                    <Button Grid.Row="1" Grid.Column="1" >
+                    <Button Grid.Row="1" Grid.Column="1" Click="Button_Click_2" >
                         <Image Source="Images\logOutIcon.png"></Image>
                     </Button>
                     <Button Grid.Row="1" Grid.Column="0" >

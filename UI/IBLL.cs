@@ -32,6 +32,13 @@ namespace WpfApplication1.UI
         void CreateConTalk(int userId, int talkId);
         void GrantAccessToTalk(int userId, int talkId);
         bool CheckTalkForNewMsgs(string talkName);
+        bool CheckAccessToTalk(int userId, string TalkName);
+        bool CheckTalkForNewJoins(string talkName);
+        List<string> GetInvitationRequests(string talkName);
+        void Invite(string nickName, string talkName);
+        void ResetNewMsgsStatus(string talkName);
+        void ResetNewInvitesStatus(string talkName);
+        void LogOut(int userId);
         
     }
 }

@@ -29,8 +29,8 @@ namespace WpfApplication1.UI
     {
 
         public int userId;
-               
 
+       
         private List<TabItem> tabList = new List<TabItem>();
 
         private List<int> tabMsgCount = new List<int>();
@@ -39,6 +39,8 @@ namespace WpfApplication1.UI
 
         public Brush foreground;
         public Brush background;
+
+        bool flag = true;
 
         private BLL.BLL BL = new BLL.BLL();
 
@@ -171,11 +173,16 @@ namespace WpfApplication1.UI
                 return;
             }
             
-                int idx = ChatTabCtrl.SelectedIndex;
-                TabItem ti = tabList[idx];
-                string talkName = ((Label)(((StackPanel)ti.Content).Children[1])).Content.ToString();
-            if (BL.CheckTalkForNewMsgs(talkName))
+            int idx = ChatTabCtrl.SelectedIndex;
+            TabItem ti = tabList[idx];
+            string talkName = ((Label)(((StackPanel)ti.Content).Children[1])).Content.ToString();
+            if (idx == ChatTabCtrl.Items.Count - 1)
             {
+                flag = true;
+            }
+            if (BL.CheckTalkForNewMsgs(talkName) || flag)
+            {
+                flag = false;
                 if (tabMsgCount[idx] != BL.GetTalkMsgCountByName(talkName))
                 {                
                     ((TextBlock)((ScrollViewer)((StackPanel)(ti.Content)).Children[0]).Content).Text = "";
@@ -186,8 +193,58 @@ namespace WpfApplication1.UI
                     }
                     ((ScrollViewer)((StackPanel)(ti.Content)).Children[0]).ScrollToBottom();
                 }
-                tabMsgCount[idx] = BL.GetTalkMsgCountByName(talkName);   
+                tabMsgCount[idx] = BL.GetTalkMsgCountByName(talkName);
+                BL.ResetNewMsgsStatus(talkName);
             }
+            if (BL.CheckTalkForNewJoins(talkName))
+            {
+                List<string> requests = BL.GetInvitationRequests(talkName);
+                if (requests.Count == 0)
+                {
+                    BL.ResetNewInvitesStatus(talkName);
+                }
+                StackPanel sp = new StackPanel();
+                sp.Orientation = Orientation.Horizontal;
+                foreach(string nick in requests)
+                {
+                    if (nick != BL.GetUserNickById(userId))
+                    {
+                        Button btn = new Button();
+                        btn.Content = nick;
+                        btn.Click += btnInvite_Click;
+                        btn.Width = 80;
+                        sp.Children.Add(btn);
+                    }
+                }
+
+                if (((StackPanel)(ti.Content)).Children.Count == 4)
+                {
+                    ((StackPanel)(ti.Content)).Children.RemoveAt(3);
+                    ((StackPanel)(ti.Content)).Children.Add(sp);
+                }
+                else
+                {
+                    ((StackPanel)(ti.Content)).Children.Add(sp);
+                }
+            }
+        }
+
+        private void btnInvite_Click(object sender, RoutedEventArgs e)
+        {
+            int idx = ChatTabCtrl.SelectedIndex;
+            TabItem ti = tabList[idx];
+            string talkName = ((Label)(((StackPanel)ti.Content).Children[1])).Content.ToString();
+            BL.Invite(((Button)sender).Content.ToString(), talkName);
+            StackPanel sp = (StackPanel)(((Button)sender).Parent);
+            int count = 0;
+            for (int i = 0; i < sp.Children.Count; i++)
+            {
+                if (sp.Children[i] == (Button)sender)
+                {
+                    count = i;
+                }
+            }
+            sp.Children.RemoveAt(count);
         }
 
         private void inputChatTB_KeyUp(object sender, KeyEventArgs e)
@@ -203,7 +260,9 @@ namespace WpfApplication1.UI
 
         private void Window_Closing_1(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            Application.Current.Shutdown();
+            BL.LogOut(userId);
+            LoginWin lw = new LoginWin();
+            lw.Show();                       
         }
 
         private void Expander_Expanded_1(object sender, RoutedEventArgs e)
@@ -255,7 +314,7 @@ namespace WpfApplication1.UI
             }
             foreach (string name in BL.GetAllGroupTalksName())
             {
-                if (!(openedTabs.Contains(name)))
+                if (!(openedTabs.Contains(name)) && BL.CheckAccessToTalk(userId, name))
                 {
                     Button btn = new Button();
                     btn.Content = name;
@@ -309,11 +368,11 @@ namespace WpfApplication1.UI
             }
             else
             {
-                MessageBoxResult result = MessageBox.Show(string.Format("Do you want to join {0} room?",name), "Confirmation", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                MessageBoxResult result = MessageBox.Show(string.Format("Do you want to send invitation reques to join {0} room?",name), "Confirmation", MessageBoxButton.YesNo, MessageBoxImage.Question);
                 if (result == MessageBoxResult.Yes)
                 {
                     BL.CreateConTalk(userId,BL.GetTalkIdByName(name));
-                    MessageBox.Show(string.Format("When you will be allowed to {0} room, you will see it in your room list!", name), "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show(string.Format("When you will be allowed to join {0} room, you will see it in your room list!", name), "Info", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }           
                         
@@ -330,8 +389,7 @@ namespace WpfApplication1.UI
         {
             SettingsWin sw = new SettingsWin();
             sw.Show();
-            sw.parent = this;
-                       
+            sw.parent = this;                       
         }
 
         public void SetStyles()
@@ -400,6 +458,17 @@ namespace WpfApplication1.UI
                 file.WriteLine(S.Color.ToString());
             }
 
+        }
+
+        private void Button_Click_2(object sender, RoutedEventArgs e)
+        {           
+            this.Close(); 
+        }
+
+        private void Button_Click_3(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show(string.Format("This project was created by Oleksandr Sinkevych\nAll questions, suggestions and remarks you can send to kramer.istep@gmail.com\nAll right reserved(c)2015")
+                                        , "Easy Local Chat", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
        

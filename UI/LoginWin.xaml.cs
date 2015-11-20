@@ -72,11 +72,11 @@ namespace WpfApplication1.UI
                 {
                     SaveData(SignNickTB.Text, SignPasswordTB.Password);
                 }
-
                 ChatWin chWin = new ChatWin();
                 chWin.Show();
                 chWin.userId = BL.GetUserIdByNick(SignNickTB.Text);
                 this.Close();
+                
                 return;
             }
             else

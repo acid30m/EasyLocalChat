@@ -54,5 +54,17 @@ namespace WpfApplication1.BLL
 
         bool CheckTalkForNewMsgs(string talkName);
 
+        bool CheckAccessToTalk(int userId, string TalkName);
+
+        bool CheckTalkForNewJoins(string talkName);
+
+        List<string> GetInvitationRequests(string talkName);
+
+        void ResetNewMsgsStatus(string talkName);
+
+        void ResetNewInvitesStatus(string talkName);
+
+        void LogOut(int userId);
+
     }
 }

@@ -170,6 +170,42 @@ namespace WpfApplication1.BLL
             return dal.CheckTalkForNewMsgs(talkName);
         }
 
+        public bool CheckAccessToTalk(int userId, string TalkName)
+        {
+            return dal.CheckAccessToTalk(userId, TalkName);
+        }
+
+        public bool CheckTalkForNewJoins(string talkName)
+        {
+            return dal.CheckTalkForNewJoins(talkName);
+        }
+
+        public List<string> GetInvitationRequests(string talkName)
+        {
+            return dal.GetInvitationRequests(talkName);
+        }
+
+        public void Invite(string nickName, string talkName)
+        {
+            dal.GrantAccessToTalk(dal.GetUserIdByNick(nickName), dal.GetTalkIdByName(talkName));
+        }
+
+        public void ResetNewMsgsStatus(string talkName)
+        {
+            dal.ResetNewMsgsStatus(talkName);
+        }
+
+        public void ResetNewInvitesStatus(string talkName)
+        {
+            dal.ResetNewInvitesStatus(talkName);
+        }
+
+        public void LogOut(int userId)
+        {
+            dal.LogOut(userId);
+        }
+
+
 
 
         #endregion
